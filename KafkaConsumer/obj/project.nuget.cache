@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "JEObG+ChBl2gWSuaSx5g9iEE0HjMWOVlRCPHNa4rSgXhYYvX1fseWI1OwXJvhMffAxLOZVRKD+KEXrcxOMzONQ==",
+  "dgSpecHash": "pU0BIaFqA8QyvQ2d8zpVhw+2CgJfUHhHPZS0PgyUN/Aj3OpibeCfwiM7XdqFxOyZIGsw4EdFHL321imrR2aCow==",
   "success": true,
   "projectFilePath": "C:\\Development\\BitMauplation\\KafkaConsumer\\KafkaConsumer\\KafkaConsumer.csproj",
   "expectedPackageFiles": [
@@ -32,6 +32,7 @@
     "C:\\Users\\USER\\.nuget\\packages\\microsoft.extensions.options\\7.0.1\\microsoft.extensions.options.7.0.1.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\7.0.0\\microsoft.extensions.options.configurationextensions.7.0.0.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\microsoft.extensions.primitives\\7.0.0\\microsoft.extensions.primitives.7.0.0.nupkg.sha512",
+    "C:\\Users\\USER\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\serilog\\3.0.1\\serilog.3.0.1.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\serilog.extensions.hosting\\7.0.0\\serilog.extensions.hosting.7.0.0.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\serilog.extensions.logging\\7.0.0\\serilog.extensions.logging.7.0.0.nupkg.sha512",

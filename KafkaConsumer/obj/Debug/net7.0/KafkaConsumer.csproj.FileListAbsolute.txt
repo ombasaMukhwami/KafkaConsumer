@@ -76,3 +76,4 @@ C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Serilo
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\System.Diagnostics.EventLog.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\runtimes\win\lib\net7.0\System.Diagnostics.EventLog.Messages.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\runtimes\win\lib\net7.0\System.Diagnostics.EventLog.dll
+C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Newtonsoft.Json.dll

@@ -1,11 +1,8 @@
 ﻿using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
+using static Confluent.Kafka.ConfigPropertyNames;
 
 namespace KafkaConsumer;
 
@@ -18,16 +15,13 @@ public class KafkaProcessor : IKafkaProcessor
 {
     private readonly KafkaSetting _kafkaSetting;
     private readonly ILogger<KafkaProcessor> _logger;
+    private readonly ConsumerConfig _consumerConfig;
 
     public KafkaProcessor(IOptions<KafkaSetting> option, ILogger<KafkaProcessor> logger)
     {
         _kafkaSetting = option.Value;
         _logger = logger;
-    }
-
-    public void Consume()
-    {
-        var config = new ConsumerConfig
+        _consumerConfig = new ConsumerConfig
         {
             BootstrapServers = _kafkaSetting.BootstrapServers,
             SecurityProtocol = SecurityProtocol.SaslSsl,
@@ -35,8 +29,13 @@ public class KafkaProcessor : IKafkaProcessor
             SaslUsername = _kafkaSetting.Username,
             SaslPassword = _kafkaSetting.Password,
             AutoOffsetReset = AutoOffsetReset.Earliest,
-            GroupId = "ntsa-data-group"
+            GroupId = "ntsa-data-group",
         };
+    }
+
+    public void Consume()
+    {
+
         //Confluent.io
         //var config = new ConsumerConfig
         //{
@@ -49,19 +48,40 @@ public class KafkaProcessor : IKafkaProcessor
         //	GroupId="ntsa-data-group"
         //};
 
-        var consumer = new ConsumerBuilder<Null, string>(config).Build();
+        using var consumer = new ConsumerBuilder<Ignore, string>(_consumerConfig).Build();
         consumer.Subscribe(_kafkaSetting.Topic);
-        CancellationTokenSource token = new();
-
+        CancellationTokenSource cancellationToken = new();
         try
         {
+
             _logger.LogInformation("Ready");
             while (true)
             {
-                var response = consumer.Consume(token.Token);
-                if (response.Message != null)
-                {                    
-                    _logger.LogInformation("{timestamp}{offset}{response}", response.Timestamp.UtcDateTime,response.Offset.Value,response.Message.Value);
+                var response = consumer.Consume(cancellationToken.Token);
+                try
+                {
+                    if (response.Message is not null)
+                    {
+                        // _logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);
+                        var model = JsonConvert.DeserializeObject<BCEMessage>(response.Message.Value, Program.JsonSerializationSettingImport);
+                        _logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);
+                        if (model != null && model.Gps != null && model.Gps.Location != null)
+                        {
+                            var serialNo = Guid.NewGuid();
+                            Program.NtsaDataToBeSend[serialNo] = new NtsaForwardData<SpeedLimiter>
+                            {
+                                Data = model.ConvertToSpeedLimiter(),
+                                Raw = response.Message.Value,
+                                SerialNo = serialNo
+                            };
+                        }
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // _logger.LogError("{Receiving}\n {data}", ex.Message, response.Message.Value);
+                    _logger.LogError("{data}", response.Message.Value);
                 }
             }
         }

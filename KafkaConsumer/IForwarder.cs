@@ -10,7 +10,9 @@ public interface IForwarder
 {
     Task<bool> SendToNtsaJT808TCPAsync(string data, string imei);
     Task<bool> SendToNtsaJT808TCPAsync(byte[] byteArray, string imei);
+    Task<bool> SendDataUsingSingleChannel(FinalData data);
 }
+public record FinalData(byte[] Data, string Imei);
 public class Ntsa : INtsa
 {
     public bool AllInOne { get; set; }
@@ -18,6 +20,7 @@ public class Ntsa : INtsa
     public bool SendAll { get; set; }
     public string NtsaHost { get; set; }
     public int NtsaPort { get; set; }
+    public bool UseSingleChannel { get; set; }
 }
 
 public interface INtsa
@@ -27,4 +30,5 @@ public interface INtsa
     bool SendAll { get; set; }
     string NtsaHost { get; set; }
     int NtsaPort { get; set; }
+    bool UseSingleChannel { get; set; }
 }

@@ -99,11 +99,11 @@ namespace KafkaConsumer
                 GpsDateTime = message.Event.GpsDateTime,
                 Altitude = message.Gps.Altitude,
                 DeviceId = message.Event.DeviceId,
-                IgnitionStatus = message.Payload.IgnitionStatus,
+                IgnitionStatus = message.Payload?.IgnitionStatus ?? false,
                 Latitude = message!.Gps!.Location!.Lat,
                 Longitude = message!.Gps!.Location!.Lon,
                 Odometer = message.Gps.Odometer,
-                PowerSignal = message.Payload.PowerSignal,
+                PowerSignal = message.Payload?.PowerSignal ?? false,
                 Satellites = message.Gps.SatellitesFix,
                 Speed = message.Gps.Speed,
             };

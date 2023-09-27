@@ -11,6 +11,7 @@ public class SocketVm
 {
     public string Unit { get; set; }
     public Socket Sender { get; set; }
+    public string LocalEndPoint { get; set; }
     public DateTimeOffset LastSent { get; set; }
 }
 

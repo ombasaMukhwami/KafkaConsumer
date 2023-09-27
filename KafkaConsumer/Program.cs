@@ -111,7 +111,7 @@ public class Program
                             NtsaSender.NtsaPort
                         );
 
-                        var result = await httpSender.SendToNtsaJT808TCPAsync(payload.Raw.ToHex(), payload.Unit);
+                        var result = await httpSender.SendDataUsingSingleChannel(new(payload.Raw.ToHex().HexStringToByteArray(), payload.Unit));
                         //var result = await httpSender.Publish(payload);
                         if (result)
                         {

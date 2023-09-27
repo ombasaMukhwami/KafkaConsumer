@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "pU0BIaFqA8QyvQ2d8zpVhw+2CgJfUHhHPZS0PgyUN/Aj3OpibeCfwiM7XdqFxOyZIGsw4EdFHL321imrR2aCow==",
+  "dgSpecHash": "OJbQ5CJTVTMzI3ryW3+2g64JrALuK1ih1mUJDlc/x1Jj+4wi1mF701+y7h1u4YROP8Zt0K2WpT/yXLrPCGRIVQ==",
   "success": true,
   "projectFilePath": "C:\\Development\\BitMauplation\\KafkaConsumer\\KafkaConsumer\\KafkaConsumer.csproj",
   "expectedPackageFiles": [
@@ -43,7 +43,10 @@
     "C:\\Users\\USER\\.nuget\\packages\\system.diagnostics.eventlog\\7.0.0\\system.diagnostics.eventlog.7.0.0.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\system.memory\\4.5.0\\system.memory.4.5.0.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\system.text.encodings.web\\7.0.0\\system.text.encodings.web.7.0.0.nupkg.sha512",
-    "C:\\Users\\USER\\.nuget\\packages\\system.text.json\\7.0.0\\system.text.json.7.0.0.nupkg.sha512"
+    "C:\\Users\\USER\\.nuget\\packages\\system.text.json\\7.0.0\\system.text.json.7.0.0.nupkg.sha512",
+    "C:\\Users\\USER\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\7.0.10\\microsoft.netcore.app.runtime.win-x64.7.0.10.nupkg.sha512",
+    "C:\\Users\\USER\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\7.0.10\\microsoft.windowsdesktop.app.runtime.win-x64.7.0.10.nupkg.sha512",
+    "C:\\Users\\USER\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\7.0.10\\microsoft.aspnetcore.app.runtime.win-x64.7.0.10.nupkg.sha512"
   ],
   "logs": []
 }

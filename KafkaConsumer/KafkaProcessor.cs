@@ -1,8 +1,10 @@
 ﻿using Confluent.Kafka;
+using KafkaConsumer.Models;
+using KafkaConsumer.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using static Confluent.Kafka.ConfigPropertyNames;
 
 namespace KafkaConsumer;
 
@@ -33,7 +35,7 @@ public class KafkaProcessor : IKafkaProcessor
         };
     }
 
-    public void Consume()
+    public async void Consume()
     {
 
         //Confluent.io
@@ -64,18 +66,36 @@ public class KafkaProcessor : IKafkaProcessor
                     {
                         // _logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);
                         var model = JsonConvert.DeserializeObject<BCEMessage>(response.Message.Value, Program.JsonSerializationSettingImport);
-                        _logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);
+                        //_logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);
+                        //Program.LatestRecord[model.Event.DeviceId] = model.ToLatestRecorModel();
                         if (model != null && model.Gps != null && model.Gps.Location != null)
                         {
                             var serialNo = Guid.NewGuid();
+                            var speedLimiter = model.ConvertToSpeedLimiter();
+                            Program.DatabaseDict[serialNo] = speedLimiter;
                             Program.NtsaDataToBeSend[serialNo] = new NtsaForwardData<SpeedLimiter>
                             {
-                                Data = model.ConvertToSpeedLimiter(),
+                                Data = speedLimiter,
                                 Raw = response.Message.Value,
                                 SerialNo = serialNo
                             };
                         }
 
+                        //if (model is not null && model.Event is not null)
+                        //{
+
+                        //    if (Program.LatestRecord.TryGetValue(model.Event.DeviceId, out var latestRecor))
+                        //    {
+                        //        if()
+                        //    }
+                        //    else
+                        //    {
+                        //        Program.LatestRecord[model.Event.DeviceId] = model.Event.ToLatestRecorModel();
+
+                        //    }
+
+
+                        //}
                     }
                 }
                 catch (Exception ex)

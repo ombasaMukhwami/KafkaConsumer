@@ -163,7 +163,7 @@ public class Forwarder : IForwarder
                     _logger.LogCritical(e.Message);
                 }
             }
-            clientSocket ??= new SocketVm
+            clientSocket = clientSocket ?? new SocketVm
             {
                 Unit = liveDeviceSendingData,
                 Sender = sender,

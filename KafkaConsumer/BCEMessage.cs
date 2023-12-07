@@ -2,12 +2,13 @@
 
 public class BCEMessage
 {
-    public Position Payload { get; set; } = null!;
+    public BCEPosition Payload { get; set; } = null!;
     public Event Event { get; set; } = null!;
-    public Device Device { get; set; } = null!;
+    public BCEDevice Device { get; set; } = null!;
     public Firmware? Log { get; set; }
     public Gps Gps { get; set; }
     public bool Valid { get { return Log is null; } }
+    public long DeviceId { get; set; }
 }
 public class Gps
 {
@@ -30,7 +31,7 @@ public class Firmware
     public int FunctionIndex { get; set; }
 }
 //2023-05-11,11:14:50,000016100005024,0101011,KDG 832Y,0,00000.000,0,0,34.8881,,0.60288,,0,0,0
-public class Position
+public class BCEPosition
 {
     public int EngineRpm { get; set; }
     public bool OutputState { get; set; }
@@ -59,14 +60,14 @@ public class Position
 
 public class Event
 {
-    public string DeviceId { get; set; }
+    public long DeviceId { get; set; }
     public int TimeStamp { get; set; }
     public string RecordGuid { get; set; }
     public string UniqueId { get; set; }
     public DateTime GpsDateTime { get { return TimeStamp.ConvertToDateTime().AddHours(3); } }
 }
 
-public class Device
+public class BCEDevice
 {
     public Cellular? Cellular { get; set; }
     public int? Battery { get; set; }

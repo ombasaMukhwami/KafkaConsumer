@@ -1,6 +1,8 @@
 ﻿using Confluent.Kafka;
+using KafkaConsumer.Models;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -106,6 +108,63 @@ namespace KafkaConsumer
                 PowerSignal = message.Payload?.PowerSignal ?? false,
                 Satellites = message.Gps.SatellitesFix,
                 Speed = message.Gps.Speed,
+            };
+        }
+        public static LatestRecorModel ToLatestRecorModel(this BCEMessage message)
+        {
+            return new LatestRecorModel(message.Event.DeviceId, message.Event.GpsDateTime);
+        }
+        public static Device ToDevice(this BCEMessage model)
+        {
+            return new Device
+            {
+                Imei = model.Event.DeviceId,
+                Serialno = model.Event.DeviceId.ToString(),
+                Phone = model.Event.DeviceId,
+                Lastupdated = model.Event.GpsDateTime
+            };
+        }
+        public static Device ToDevice(this SpeedLimiter model)
+        {
+            return new Device
+            {
+                Imei = model.DeviceId,
+                Serialno = model.DeviceId.ToString(),
+                Phone = model.DeviceId,
+                Lastupdated = model.GpsDateTime,
+                Createdat=DateTime.Now
+            };
+        }
+        public static Position ToPosition(this BCEMessage message)
+        {
+            return new Position
+            {
+                Altitude = message.Gps.Altitude,
+                Gpsdatetime = message.Event.GpsDateTime,
+                Deviceid = message.DeviceId,
+                Ignitionstatus = message.Payload?.IgnitionStatus ?? false,
+                Latitude = message!.Gps!.Location!.Lat,
+                Longitude = message!.Gps!.Location!.Lon,
+                Powersignal = message.Payload?.PowerSignal ?? false,
+                Satellites = message.Gps.SatellitesFix,
+                Speed = message.Gps.Speed,
+                Servertime = DateTime.Now
+            };
+        }
+        public static Position ToPosition(this SpeedLimiter message, long deviceId)
+        {
+            return new Position
+            {
+                Deviceid = deviceId,
+                Altitude = message.Altitude,
+                Gpsdatetime = message.GpsDateTime,
+                Ignitionstatus = message.IgnitionStatus,
+                Latitude = message.Latitude,
+                Longitude = message.Longitude,
+                Powersignal = message.PowerSignal,
+                Satellites = message.Satellites,
+                Speed = message.Speed,
+                Servertime = DateTime.Now
             };
         }
     }

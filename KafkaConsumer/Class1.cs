@@ -12,7 +12,7 @@ internal class Class1
 
 public class SpeedLimiter
 {
-    public string DeviceId { get; set; } = null!;
+    public long DeviceId { get; set; }
     public DateTime GpsDateTime { get; set; }
     public int Altitude { get; set; }
     public float Odometer { get; set; }

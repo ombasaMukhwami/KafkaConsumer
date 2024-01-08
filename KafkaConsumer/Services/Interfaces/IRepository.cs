@@ -12,10 +12,11 @@ namespace KafkaConsumer.Services.Interfaces;
 public interface IRepository<T> where T : class
 {
     Task<T?> Find(Expression<Func<T, bool>> predicate);
-    Task<IEnumerable<T>> GetAll();
+    IEnumerable<T> GetAll();
     Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> predicate);
     Task<T?> GetById(int id);
     void Update(T entity);
+    void UpdateRange(List<T> entities);
     void Add(T entity);
     Task AddRange(List<T> entity);
 }

@@ -10,13 +10,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Timers;
-using Serilog;
-using static System.Net.Mime.MediaTypeNames;
 using KafkaConsumer.Models;
 using KafkaConsumer.Data;
 using Microsoft.EntityFrameworkCore;
 using KafkaConsumer.Services.Interfaces;
 using KafkaConsumer.Services;
+using KafkaConsumer.Broker;
+using Microsoft.Extensions.ObjectPool;
+using RabbitMQ.Client;
 
 namespace KafkaConsumer;
 
@@ -29,14 +30,21 @@ public class Program
     public static IServiceProvider ServiceProvider;
     public static IKafkaSetting KafkaProperties;
     public static INtsa NtsaSender;
+
+    public static IMessageBrokerManager Transporter;
+    public static IMessageQueue MessageQueues;
+    public static IQueueSetting QueueSettings;
+
     public static ConcurrentDictionary<string, SocketVm> LiveDevices = new();
     public static ConcurrentDictionary<Guid, NtsaForwardData<SpeedLimiter>> NtsaDataToBeSend = new();
-    public static ConcurrentDictionary<Guid, SpeedLimiter> DatabaseDict = new();
+    public static ConcurrentDictionary<Guid, Payload> DatabaseDict = new();
     public static ConcurrentDictionary<long, LatestRecorModel> LatestRecord = new();
     public static ConcurrentDictionary<long, Device> DevicesDict = new();
+    public static CancellationTokenSource CancellationToken = new();
 
     public static volatile bool SendingToNtsaInProgress = false;
     public static volatile bool SavingToDatabaseInProgress = false;
+    public static volatile bool isReceivingData = false;
     public static async Task Main(string[] args)
     {
         Configuration = GetConfiguration();
@@ -48,6 +56,12 @@ public class Program
         ServiceProvider = serviceScope.ServiceProvider;
         KafkaProperties = ServiceProvider.GetService<KafkaSetting>();
         NtsaSender = ServiceProvider.GetService<Ntsa>();
+
+        MessageQueues = ServiceProvider.GetService<MessageQueue>();
+        QueueSettings = ServiceProvider.GetService<QueueSetting>();
+        Transporter = ServiceProvider.GetService<MessageBrokerManager>();
+        Transporter.CreateChannels();
+
         //var config = new ProducerConfig { BootstrapServers = "127.0.0.1:9092" };
         //var config = new ProducerConfig { BootstrapServers = "173.249.8.49:9092",  };
         //var config = new ProducerConfig { 
@@ -58,97 +72,62 @@ public class Program
         //    SaslPassword= "+wHPjcFPa07awireX4CdL9Df1SDqaG1c1rdifpiPHVzQDG5JMD14XhqTKN+kaFqa"
         //};
 
-        var ntsaSenderTimer = new System.Timers.Timer(10);
+        var healthTimer = new System.Timers.Timer(TimeSpan.FromMinutes(1));
+        healthTimer.Elapsed += HealthTimer_Elapsed;
+        healthTimer.Enabled = true;
+
+        var ntsaSenderTimer = new System.Timers.Timer(30);
         ntsaSenderTimer.Elapsed += SendingToNtsaTimer_Elapsed;
         ntsaSenderTimer.Enabled = true;
 
-        var databaseTimer = new System.Timers.Timer(TimeSpan.FromSeconds(30));
+        var databaseTimer = new System.Timers.Timer(TimeSpan.FromSeconds(15));
         databaseTimer.Elapsed += DatabaseTimer_Elapsed;
         databaseTimer.Enabled = true;
 
-        //var latestRecorTimer = new System.Timers.Timer(10);
-        //latestRecorTimer.Elapsed += LatestRecordTimer_Elapsed;
-        //latestRecorTimer.Enabled = true;
-        var db = ActivatorUtilities.GetServiceOrCreateInstance<UnitOfWork>(ServiceProvider);
-        var dict = (await db.Devices.GetAll()).GroupBy(d => d.Imei).ToDictionary(d => d.Key, d => d.AsEnumerable().FirstOrDefault());
-        DevicesDict = new ConcurrentDictionary<long, Device>(dict);
-        var workerInstance = ServiceProvider.GetRequiredService<IKafkaProcessor>();
-        workerInstance.Consume();
+
+        //var loadCaches = ServiceProvider.GetRequiredService<Worker>();
+        //loadCaches.DoWork();
+
+        var processor = ServiceProvider.GetRequiredService<IKafkaProcessor>();
+        processor.Consume();
         await host.RunAsync();
     }
-
+    private static async void HealthTimer_Elapsed(object? sender, ElapsedEventArgs e)
+    {
+        if (!isReceivingData)
+        {
+            CancellationToken.Cancel();
+            await Task.Delay(1);
+            CancellationToken = new();
+            var workerInstance = ServiceProvider.GetRequiredService<IKafkaProcessor>();
+            workerInstance.Consume();
+        }
+        isReceivingData = false;
+    }
     private static async void DatabaseTimer_Elapsed(object? sender, ElapsedEventArgs e)
     {
         if (SavingToDatabaseInProgress || DatabaseDict.IsEmpty) return;
         SavingToDatabaseInProgress = true;
-        var db = ActivatorUtilities.GetServiceOrCreateInstance<UnitOfWork>(ServiceProvider);
+
+        var httpSender = ActivatorUtilities.GetServiceOrCreateInstance<MessageBrokerManager>(ServiceProvider);
+
         while (!DatabaseDict.IsEmpty)
         {
-            var lstToSaveToDb = DatabaseDict.Take(500_000);
-
-            var positions = new List<Position>();
-            var lst = lstToSaveToDb.Select(d => d.Value).ToList();
-            var lstOfDevices = new List<Device>();
-            foreach (var model in lstToSaveToDb)
+            var lstToSaveToDb = DatabaseDict.Values.Take(500_000).ToList()
+                                                             .GroupBy(d => d.Message.Event.DeviceId)
+                                                             .ToDictionary(x => x.Key, x => x.AsEnumerable());
+            foreach (var item in lstToSaveToDb)
             {
-                long deviceId;
-                if (DevicesDict.TryGetValue(model.Value.DeviceId, out var currentDevice))
+                var result = await httpSender.Publish(item.Value);
+                if (result)
                 {
-                    deviceId = currentDevice.Id;
-                }
-                else
-                {
-                    var newDevice = model.Value.ToDevice();
-                    db.Devices.Add(newDevice);
-                    var saved = await db.CommitAsync();
-                    deviceId = newDevice.Id;
-                    DevicesDict[newDevice.Imei] = newDevice;
-                }
-                Position position = model.Value.ToPosition(deviceId);
-                positions.Add(position);
-            }
-
-            await db.Positions.AddRange(positions);
-            var result = await db.CommitAsync();
-            if (result > 0)
-            {
-                foreach (var k in lstToSaveToDb)
-                {
-                    DatabaseDict.TryRemove(k.Key, out _);
-                }
-
-                var lastPositions = positions.GroupBy(x => x.Deviceid)
-                     .ToDictionary(d => d.Key, d => d.AsEnumerable().OrderByDescending(x => x.Id).FirstOrDefault())
-                     .Select(p => p.Value)
-                     .ToList();
-
-                foreach (var pos in lastPositions)
-                {
-                    var oldDevice = await db.Devices.GetById((int)pos!.Deviceid);
-                    if(oldDevice != null)
+                    foreach (var k in item.Value)
                     {
-                        oldDevice.Positionid = pos.Id;
-                        db.Devices.Update(oldDevice);                        
-                    }                    
+                        DatabaseDict.TryRemove(k.SerialNo, out _);
+                    }
                 }
             }
         }
-
-        var done = await db.CommitAsync();
-
-        //var laterUpdates = LatestRecord.Take(500_000);
-        //var lst = laterUpdates.Select(d => d.Value).ToList();
-
-        //await db.Devices.Update(lst);
-        //var result = await db.CommitAsync();
-        //if (result > 0)
-        //{
-        //    foreach (var k in lstToSaveToDb)
-        //    {
-        //        DatabaseDict.TryRemove(k.Key, out _);
-        //    }
-        //}
-
 
         SavingToDatabaseInProgress = false;
     }
@@ -163,9 +142,10 @@ public class Program
         if (SendingToNtsaInProgress || NtsaDataToBeSend.IsEmpty)
             return;
         SendingToNtsaInProgress = true;
+        var httpSender = ActivatorUtilities.GetServiceOrCreateInstance<Forwarder>(ServiceProvider);
         while (!NtsaDataToBeSend.IsEmpty)
         {
-            var httpSender = ActivatorUtilities.GetServiceOrCreateInstance<Forwarder>(ServiceProvider);
+
             var dataToBeSend = NtsaDataToBeSend.Take(1_000_000).ToDictionary(k => k.Key, k => k.Value);
             var test = dataToBeSend.Select(x => new NtsaForwardData<SpeedLimiter>
             {
@@ -240,8 +220,6 @@ public class Program
                 }
                 //});
             }
-
-
         }
         SendingToNtsaInProgress = false;
     }
@@ -281,6 +259,10 @@ public class Program
         }).ConfigureServices((context, services) =>
         {
             services.AddOptions();
+            services.AddSingleton<MessageBrokerManager>();
+            services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
+            services.AddSingleton<IPooledObjectPolicy<IModel>, MessageBrokerModelPooledObjectPolicy>();
+
             services.AddSingleton(ctx => ctx.GetService<IOptions<KafkaSetting>>().Value);
             services.AddScoped<IKafkaSetting, KafkaSetting>();
             services.AddSingleton<IKafkaProcessor, KafkaProcessor>();
@@ -293,7 +275,12 @@ public class Program
                                  o => o.EnableRetryOnFailure())
                             .EnableSensitiveDataLogging(false)
                             .EnableDetailedErrors());
+
+            services.Configure<QueueSetting>(config => Configuration.GetSection(nameof(QueueSetting)).Bind(config));
+            services.Configure<MessageQueue>(msgQueue => Configuration.GetSection(nameof(MessageQueue)).Bind(msgQueue));
+
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddSingleton<Worker>();
 
         });
     }

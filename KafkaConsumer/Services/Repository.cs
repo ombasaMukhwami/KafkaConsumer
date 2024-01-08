@@ -22,18 +22,9 @@ public class Repository<T> : IRepository<T> where T : class
         _table = _dbContext.Set<T>();
     }
 
-    public async Task<T?> Find(Expression<Func<T, bool>> predicate)
-        => await _table.Where(predicate)
-        .AsNoTracking()
-        .FirstOrDefaultAsync();
-    public async Task<IEnumerable<T>> GetAll()
-        => await _table
-        .AsNoTracking()
-        .ToListAsync();
-    public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> predicate)
-            => await _table.Where(predicate)
-            .AsNoTracking()
-            .ToListAsync();
+    public async Task<T?> Find(Expression<Func<T, bool>> predicate) => await _table.Where(predicate).AsNoTracking().FirstOrDefaultAsync();
+    public IEnumerable<T> GetAll() => _table.AsNoTracking().ToList();
+    public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> predicate) => await _table.Where(predicate).AsNoTracking().ToListAsync();
     public async Task<T?> GetById(int id) => await _table.FindAsync(id);
 
     public void Add(T entity)
@@ -48,6 +39,11 @@ public class Repository<T> : IRepository<T> where T : class
     {
         // _table.Entry(entity).State = EntityState.Modified;
         _table.Update(entity);
+    }
+
+    public void UpdateRange(List<T> entities)
+    {
+        _table.UpdateRange(entities);
     }
 }
 

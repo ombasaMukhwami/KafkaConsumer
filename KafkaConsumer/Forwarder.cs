@@ -163,19 +163,48 @@ public class Forwarder : IForwarder
                     _logger.LogCritical(e.Message);
                 }
             }
-            clientSocket = clientSocket ?? new SocketVm
-            {
-                Unit = liveDeviceSendingData,
-                Sender = sender,
-                LastSent = DateTimeOffset.UtcNow,
-                LocalEndPoint = sender.LocalEndPoint.ToString()
-            };
-
             sender = clientSocket?.Sender;
+            var failed = true;
+            try
+            {
+                if (sender is null || clientSocket is null || clientSocket.LocalEndPoint is null)
+                {
+                    sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    sender.Connect(IPAddress.Parse(_ntsaValues.NtsaHost), _ntsaValues.NtsaPort);
+                    clientSocket = new SocketVm
+                    {
+                        Unit = liveDeviceSendingData,
+                        Sender = sender,
+                        LastSent = DateTimeOffset.UtcNow,
+                        LocalEndPoint = sender.LocalEndPoint.ToString()
+                    };
+                }
+                else
+                {
+                    clientSocket = new SocketVm
+                    {
+                        Unit = liveDeviceSendingData,
+                        Sender = sender,
+                        LastSent = DateTimeOffset.UtcNow,
+                        LocalEndPoint = sender.LocalEndPoint.ToString()
+                    };
+                }
+                failed = !failed;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Connection failed with {error}", ex.Message);
+            }
+
+            if (failed)
+                return !failed;
+           
             byte[] receivedBuf = new byte[50];
 
             try
             {
+
+
                 if (clientSocket?.Sender is null || !clientSocket.Sender.Connected)
                 {
                     Close(clientSocket ?? new());

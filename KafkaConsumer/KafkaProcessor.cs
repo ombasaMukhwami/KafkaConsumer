@@ -52,27 +52,27 @@ public class KafkaProcessor : IKafkaProcessor
 
         using var consumer = new ConsumerBuilder<Ignore, string>(_consumerConfig).Build();
         consumer.Subscribe(_kafkaSetting.Topic);
-        CancellationTokenSource cancellationToken = new();
+
         try
         {
-
             _logger.LogInformation("Ready");
             while (true)
-            {
-                var response = consumer.Consume(cancellationToken.Token);
+            {                
+                Program.isReceivingData = true;
+                var response = consumer.Consume(Program.CancellationToken.Token);
                 try
                 {
                     if (response.Message is not null)
                     {
                         // _logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);
                         var model = JsonConvert.DeserializeObject<BCEMessage>(response.Message.Value, Program.JsonSerializationSettingImport);
-                        //_logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);
-                        //Program.LatestRecord[model.Event.DeviceId] = model.ToLatestRecorModel();
+                        var serialNo = Guid.NewGuid();
+                        Program.DatabaseDict[serialNo] = new Payload(serialNo, model);
+                       // _logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);                        
+
                         if (model != null && model.Gps != null && model.Gps.Location != null)
                         {
-                            var serialNo = Guid.NewGuid();
                             var speedLimiter = model.ConvertToSpeedLimiter();
-                            Program.DatabaseDict[serialNo] = speedLimiter;
                             Program.NtsaDataToBeSend[serialNo] = new NtsaForwardData<SpeedLimiter>
                             {
                                 Data = speedLimiter,
@@ -80,29 +80,13 @@ public class KafkaProcessor : IKafkaProcessor
                                 SerialNo = serialNo
                             };
                         }
-
-                        //if (model is not null && model.Event is not null)
-                        //{
-
-                        //    if (Program.LatestRecord.TryGetValue(model.Event.DeviceId, out var latestRecor))
-                        //    {
-                        //        if()
-                        //    }
-                        //    else
-                        //    {
-                        //        Program.LatestRecord[model.Event.DeviceId] = model.Event.ToLatestRecorModel();
-
-                        //    }
-
-
-                        //}
                     }
                 }
                 catch (Exception ex)
-                {
-                    // _logger.LogError("{Receiving}\n {data}", ex.Message, response.Message.Value);
+                {                    
                     _logger.LogError("{data}", response.Message.Value);
                 }
+                Program.isReceivingData = false;
             }
         }
         catch (Exception ex)

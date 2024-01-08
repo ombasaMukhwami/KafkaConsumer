@@ -1,5 +1,7 @@
 ﻿namespace KafkaConsumer;
 
+public record Payload(Guid SerialNo, BCEMessage Message);
+
 public class BCEMessage
 {
     public BCEPosition Payload { get; set; } = null!;

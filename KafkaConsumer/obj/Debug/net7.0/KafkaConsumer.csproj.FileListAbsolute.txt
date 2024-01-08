@@ -112,3 +112,6 @@ C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\refint
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.pdb
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.genruntimeconfig.cache
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\ref\KafkaConsumer.dll
+C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\LazyCache.dll
+C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.ObjectPool.dll
+C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\RabbitMQ.Client.dll

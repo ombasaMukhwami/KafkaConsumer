@@ -17,4 +17,4 @@ public class SocketVm
 
 public record NtsaPayload(string Unit, int Heading, int Speed, decimal Latitude, decimal Longitude, DateTime DatetimeActual, string PlateNumber, string Raw, int Ignition, Guid SerialNo, string Host, int Port);
 
-public record LatestRecorModel(long DeviceId, DateTime GpsDateTime);
+public record LatestRecorModel(long DeviceId, DateTime GpsDateTime, long PreviousCount, long CurrentCount);

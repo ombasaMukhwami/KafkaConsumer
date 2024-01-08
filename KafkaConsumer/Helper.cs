@@ -112,7 +112,7 @@ namespace KafkaConsumer
         }
         public static LatestRecorModel ToLatestRecorModel(this BCEMessage message)
         {
-            return new LatestRecorModel(message.Event.DeviceId, message.Event.GpsDateTime);
+            return new LatestRecorModel(message.Event.DeviceId, message.Event.GpsDateTime,0,0);
         }
         public static Device ToDevice(this BCEMessage model)
         {

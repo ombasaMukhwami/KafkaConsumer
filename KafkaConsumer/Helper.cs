@@ -72,24 +72,8 @@ namespace KafkaConsumer
         }
 
         public static string ConvertToNtsaFormat(this NtsaForwardData<SpeedLimiter> data)
-        {
-            var message = data.Data;
-            string ns = "N";
-            string ew = "E";
-            int gpsStatus = 0;
-            var dateTime = message.GpsDateTime;
-            if (message.Longitude < 0)
-            {
-                ew = "W";
-            }
-            if (message.Latitude < 0)
-            {
-                ns = "S";
-            }
-            //2023-05-11,11:14:50,000016100005024,0101011,KDG 832Y,0,00000.000,0,0,34.8881,,0.60288,,0,0,0
-            string strData = $"{dateTime:yyyy-MM-dd},{dateTime:HH:mm:ss},{message.DeviceId},{message.DeviceId},{message.DeviceId},{message.Speed},{message.Odometer},{gpsStatus},{message.Satellites},{message.Longitude},{ns},{message.Latitude},{ew},{Convert.ToInt16(!message.PowerSignal)},0,{Convert.ToInt16(!message.IgnitionStatus)}#";
-            return strData;
-        }
+        => data.Data.ConvertToNtsaFormat();
+
         public static DateTime ConvertToDateTime(this int timestamp)
         {
             return new DateTime(1970, 1, 1).AddSeconds(timestamp);
@@ -112,7 +96,7 @@ namespace KafkaConsumer
         }
         public static LatestRecorModel ToLatestRecorModel(this BCEMessage message)
         {
-            return new LatestRecorModel(message.Event.DeviceId, message.Event.GpsDateTime,0,0);
+            return new LatestRecorModel(message.Event.DeviceId, message.Event.GpsDateTime, 0, 0);
         }
         public static Device ToDevice(this BCEMessage model)
         {
@@ -132,7 +116,7 @@ namespace KafkaConsumer
                 Serialno = model.DeviceId.ToString(),
                 Phone = model.DeviceId,
                 Lastupdated = model.GpsDateTime,
-                Createdat=DateTime.Now
+                Createdat = DateTime.Now
             };
         }
         public static Position ToPosition(this BCEMessage message)

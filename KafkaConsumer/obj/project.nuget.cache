@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "w2367V2MUrZ8+WzGtcDlB8GBYU5z7Y1kCa+peifStRkdMVJkkO6wSFzy54Jr4IHpfnDeXPreThqOWvH6uu9cZg==",
+  "dgSpecHash": "KQRtVTbOO8gA9US981T/doBTMzZNA5L2gBPOLht19f75PMCwM+mXMf0AmeZzQ/rjS34aN5ZiJd+dnCsoGDjyIQ==",
   "success": true,
   "projectFilePath": "C:\\Development\\BitMauplation\\KafkaConsumer\\KafkaConsumer\\KafkaConsumer.csproj",
   "expectedPackageFiles": [
@@ -96,9 +96,9 @@
     "C:\\Users\\USER\\.nuget\\packages\\system.threading.tasks.extensions\\4.5.4\\system.threading.tasks.extensions.4.5.4.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\system.windows.extensions\\4.7.0\\system.windows.extensions.4.7.0.nupkg.sha512",
     "C:\\Users\\USER\\.nuget\\packages\\zstdsharp.port\\0.7.1\\zstdsharp.port.0.7.1.nupkg.sha512",
-    "C:\\Users\\USER\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\7.0.14\\microsoft.netcore.app.runtime.win-x64.7.0.14.nupkg.sha512",
-    "C:\\Users\\USER\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\7.0.14\\microsoft.windowsdesktop.app.runtime.win-x64.7.0.14.nupkg.sha512",
-    "C:\\Users\\USER\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\7.0.14\\microsoft.aspnetcore.app.runtime.win-x64.7.0.14.nupkg.sha512"
+    "C:\\Users\\USER\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\7.0.15\\microsoft.netcore.app.runtime.win-x64.7.0.15.nupkg.sha512",
+    "C:\\Users\\USER\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\7.0.15\\microsoft.windowsdesktop.app.runtime.win-x64.7.0.15.nupkg.sha512",
+    "C:\\Users\\USER\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\7.0.15\\microsoft.aspnetcore.app.runtime.win-x64.7.0.15.nupkg.sha512"
   ],
   "logs": []
 }

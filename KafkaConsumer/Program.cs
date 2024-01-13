@@ -80,7 +80,7 @@ public class Program
         ntsaSenderTimer.Elapsed += SendingToNtsaTimer_Elapsed;
         ntsaSenderTimer.Enabled = true;
 
-        var databaseTimer = new System.Timers.Timer(TimeSpan.FromSeconds(15));
+        var databaseTimer = new System.Timers.Timer(TimeSpan.FromSeconds(1));
         databaseTimer.Elapsed += DatabaseTimer_Elapsed;
         databaseTimer.Enabled = true;
 

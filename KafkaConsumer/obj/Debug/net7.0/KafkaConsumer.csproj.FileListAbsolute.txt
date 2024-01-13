@@ -11,6 +11,7 @@ C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Humani
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\K4os.Compression.LZ4.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\K4os.Compression.LZ4.Streams.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\K4os.Hash.xxHash.dll
+C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\LazyCache.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Abstractions.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.EntityFrameworkCore.Design.dll
@@ -40,6 +41,7 @@ C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Micros
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.Logging.Debug.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.Logging.EventLog.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.Logging.EventSource.dll
+C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.ObjectPool.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.Options.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.Primitives.dll
@@ -48,6 +50,7 @@ C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Mono.T
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\MySql.Data.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\MySql.EntityFrameworkCore.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Newtonsoft.Json.dll
+C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\RabbitMQ.Client.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Serilog.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Serilog.Extensions.Hosting.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Serilog.Extensions.Logging.dll
@@ -112,6 +115,3 @@ C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\refint
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.pdb
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.genruntimeconfig.cache
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\ref\KafkaConsumer.dll
-C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\LazyCache.dll
-C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\Microsoft.Extensions.ObjectPool.dll
-C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\bin\Debug\net7.0\RabbitMQ.Client.dll

@@ -80,7 +80,7 @@ public class Program
         ntsaSenderTimer.Elapsed += SendingToNtsaTimer_Elapsed;
         ntsaSenderTimer.Enabled = true;
 
-        var databaseTimer = new System.Timers.Timer(TimeSpan.FromSeconds(1));
+        var databaseTimer = new System.Timers.Timer(TimeSpan.FromSeconds(15));
         databaseTimer.Elapsed += DatabaseTimer_Elapsed;
         databaseTimer.Enabled = true;
 
@@ -109,25 +109,26 @@ public class Program
         if (SavingToDatabaseInProgress || DatabaseDict.IsEmpty) return;
         SavingToDatabaseInProgress = true;
 
-        var httpSender = ActivatorUtilities.GetServiceOrCreateInstance<MessageBrokerManager>(ServiceProvider);
 
-        while (!DatabaseDict.IsEmpty)
+        using var scope = ServiceProvider.CreateScope();
+        var httpSender = scope.ServiceProvider.GetService<IMessageBrokerManager>();
+        httpSender ??= ActivatorUtilities.GetServiceOrCreateInstance<MessageBrokerManager>(ServiceProvider);
+
+        var lstToSaveToDb = DatabaseDict.Values.Take(500_000).ToList()
+                                                         .GroupBy(d => d.Message.Event.DeviceId)
+                                                         .ToDictionary(x => x.Key, x => x.AsEnumerable());
+        foreach (var item in lstToSaveToDb)
         {
-            var lstToSaveToDb = DatabaseDict.Values.Take(500_000).ToList()
-                                                             .GroupBy(d => d.Message.Event.DeviceId)
-                                                             .ToDictionary(x => x.Key, x => x.AsEnumerable());
-            foreach (var item in lstToSaveToDb)
+            var result = await httpSender.Publish(item.Value);
+            if (result)
             {
-                var result = await httpSender.Publish(item.Value);
-                if (result)
+                foreach (var k in item.Value)
                 {
-                    foreach (var k in item.Value)
-                    {
-                        DatabaseDict.TryRemove(k.SerialNo, out _);
-                    }
+                    DatabaseDict.TryRemove(k.SerialNo, out _);
                 }
             }
         }
+
 
         SavingToDatabaseInProgress = false;
     }
@@ -142,7 +143,10 @@ public class Program
         if (SendingToNtsaInProgress || NtsaDataToBeSend.IsEmpty)
             return;
         SendingToNtsaInProgress = true;
-        var httpSender = ActivatorUtilities.GetServiceOrCreateInstance<Forwarder>(ServiceProvider);
+
+        //using var scope = ServiceProvider.CreateScope();
+        var httpSender = ServiceProvider.GetService<IForwarder>();
+        httpSender ??= ActivatorUtilities.GetServiceOrCreateInstance<Forwarder>(ServiceProvider);
         while (!NtsaDataToBeSend.IsEmpty)
         {
 

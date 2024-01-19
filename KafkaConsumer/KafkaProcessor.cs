@@ -58,7 +58,7 @@ public class KafkaProcessor : IKafkaProcessor
 
         try
         {
-            var httpSender = ActivatorUtilities.GetServiceOrCreateInstance<MessageBrokerManager>(Program.ServiceProvider);
+            //var httpSender = ActivatorUtilities.GetServiceOrCreateInstance<MessageBrokerManager>(Program.ServiceProvider);
             //var ntsaSender = ActivatorUtilities.GetServiceOrCreateInstance<Forwarder>(Program.ServiceProvider);
             _logger.LogInformation("Ready");
 
@@ -73,11 +73,11 @@ public class KafkaProcessor : IKafkaProcessor
                     {
                         var serialNo = Guid.NewGuid();
                         var model = JsonConvert.DeserializeObject<BCEMessage>(response.Message.Value, Program.JsonSerializationSettingImport);
-                        var lst = new List<Payload>
-                        {
-                            new (serialNo, model)
-                        };
-                        _ = await httpSender.Publish(lst);
+                        //var lst = new List<Payload>
+                        //{
+                        //    new (serialNo, model)
+                        //};
+                        //_ = await httpSender.Publish(lst);
 
                         if (model != null && model.Gps != null && model.Gps.Location != null)
                         {
@@ -88,7 +88,7 @@ public class KafkaProcessor : IKafkaProcessor
                                 Raw = response.Message.Value,
                                 SerialNo = serialNo
                             };
-                            //Program.DatabaseDict[serialNo] = new Payload(serialNo, model);
+                            Program.DatabaseDict[serialNo] = new Payload(serialNo, model);
                             Program.NtsaDataToBeSend[serialNo] = sendPayload;
                             //string rawdata = sendPayload.ConvertToNtsaFormat();
                             //var payload = new NtsaPayload(

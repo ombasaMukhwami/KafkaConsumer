@@ -109,9 +109,9 @@ C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaC
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.AssemblyInfo.cs
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.csproj.CoreCompileInputs.cache
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.sourcelink.json
-C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.csproj.CopyComplete
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\refint\KafkaConsumer.dll
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.pdb
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaConsumer.genruntimeconfig.cache
 C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\ref\KafkaConsumer.dll
+C:\Development\BitMauplation\KafkaConsumer\KafkaConsumer\obj\Debug\net7.0\KafkaCon.791469D7.Up2Date

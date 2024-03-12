@@ -23,9 +23,7 @@ public interface IMessageQueue
 
     string VHost { get; set; }
 }
-
-
-public class QueueSetting : IQueueSetting
+public abstract class BaseQueueSetting : IQueueSetting
 {
     public string ExchangeName { get; set; }
     public string QueueName { get; set; }
@@ -35,6 +33,14 @@ public class QueueSetting : IQueueSetting
     public bool ExchangeDurable { get; set; }
     public bool Exclusive { get; set; }
     public bool AutoDelete { get; set; }
+}
+public class TrackerQueueSetting : BaseQueueSetting
+{
+
+}
+
+public class QueueSetting : BaseQueueSetting
+{
 }
 public class MessageQueue : IMessageQueue
 {
@@ -47,4 +53,9 @@ public class MessageQueue : IMessageQueue
     public int Port { get; set; } = 5672;
 
     public string VHost { get; set; } = "/";
+}
+
+public class OtherSetting
+{
+    public bool SaveToDb { get; set; }
 }

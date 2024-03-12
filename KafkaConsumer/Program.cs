@@ -61,6 +61,7 @@ public class Program
         QueueSettings = ServiceProvider.GetService<QueueSetting>();
         Transporter = ServiceProvider.GetService<MessageBrokerManager>();
         Transporter.CreateChannels();
+        Transporter.Subscribe();
 
         //var config = new ProducerConfig { BootstrapServers = "127.0.0.1:9092" };
         //var config = new ProducerConfig { BootstrapServers = "173.249.8.49:9092",  };
@@ -85,8 +86,6 @@ public class Program
         databaseTimer.Enabled = true;
 
 
-        //var loadCaches = ServiceProvider.GetRequiredService<Worker>();
-        //loadCaches.DoWork();
 
         var processor = ServiceProvider.GetRequiredService<IKafkaProcessor>();
         processor.Consume();
@@ -280,6 +279,8 @@ public class Program
                             .EnableSensitiveDataLogging(false)
                             .EnableDetailedErrors());
 
+            services.Configure<OtherSetting>(config => Configuration.GetSection(nameof(OtherSetting)).Bind(config));
+            services.Configure<TrackerQueueSetting>(config => Configuration.GetSection(nameof(TrackerQueueSetting)).Bind(config));
             services.Configure<QueueSetting>(config => Configuration.GetSection(nameof(QueueSetting)).Bind(config));
             services.Configure<MessageQueue>(msgQueue => Configuration.GetSection(nameof(MessageQueue)).Bind(msgQueue));
 

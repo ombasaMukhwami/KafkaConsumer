@@ -6,10 +6,6 @@ using System.Threading.Tasks;
 
 namespace KafkaConsumer;
 
-internal class Class1
-{
-}
-
 public class SpeedLimiter
 {
     public long DeviceId { get; set; }

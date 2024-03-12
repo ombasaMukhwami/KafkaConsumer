@@ -6,5 +6,6 @@ namespace KafkaConsumer.Broker;
 public interface IMessageBrokerManager
 {
     Task<bool> Publish<T>(T message) where T : class;
+    void Subscribe();
     void CreateChannels();
 }

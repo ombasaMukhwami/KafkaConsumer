@@ -93,15 +93,9 @@ public class MessageBrokerManager : IMessageBrokerManager
                 if (lstToSaveToDb is null) return;
 
                 foreach (var item in lstToSaveToDb)
-                {
+                {                   
                     var model = item.ToBCEMessage();
-                    var speedLimiter = model.ConvertToSpeedLimiter();
-
-                    //var actualDate = item.Data.Position.DeviceTime;
-
-                    //TimeSpan span = item.Data.Position.DeviceTime.Subtract(new DateTime(1970, 1, 1, 0, 0, 0));
-                    //var timeStamp = (int)span.TotalSeconds;
-                    //var testDate = timeStamp.ConvertToDateTime();
+                    var speedLimiter = model.ConvertToSpeedLimiter();                    
 
                     var sendPayload = new NtsaForwardData<SpeedLimiter>
                     {

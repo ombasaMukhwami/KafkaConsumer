@@ -78,9 +78,13 @@ public static class Helper
     }
     public static int ConvertDateTimeToSeconds(this DateTime date)
     {
-        TimeSpan span = date.Subtract(new DateTime(1970, 1, 1));
-        var timeStamp = span.TotalSeconds;
-        return (int)timeStamp;
+        var dateTimeUTC = date.AddHours(-3);
+        //var timeStamp = (int)(date.AddHours(-3) - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+        TimeSpan span = dateTimeUTC.Subtract(new DateTime(1970, 1, 1, 0, 0, 0));
+        var timeStamp = (int)span.TotalSeconds;
+        var testDate = timeStamp.ConvertToDateTime();
+
+        return timeStamp;
     }
     public static SpeedLimiter ConvertToSpeedLimiter(this BCEMessage message)
     {
@@ -186,7 +190,7 @@ public static class Helper
                 DeviceId = imei,
                 UniqueId = data.Device.UniqueId,
                 TimeStamp = data.Position.DeviceTime.ConvertDateTimeToSeconds(),
-                RecordGuid = msg.SerialNo.ToString(),
+                RecordGuid = msg.SerialNo.ToString()
             },
             Payload = new BCEPosition
             {

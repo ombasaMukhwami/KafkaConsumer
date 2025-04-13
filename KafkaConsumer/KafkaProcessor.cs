@@ -1,7 +1,6 @@
 ﻿using Confluent.Kafka;
 using KafkaConsumer.Broker;
 using KafkaConsumer.Models;
-using KafkaConsumer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,13 +18,15 @@ public class KafkaProcessor : IKafkaProcessor
     private readonly KafkaSetting _kafkaSetting;
     private readonly ILogger<KafkaProcessor> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IProcessingStorage _processingStorage;
     private readonly ConsumerConfig _consumerConfig;
 
-    public KafkaProcessor(IOptions<KafkaSetting> option, ILogger<KafkaProcessor> logger, IServiceProvider serviceProvider)
+    public KafkaProcessor(IOptions<KafkaSetting> option, ILogger<KafkaProcessor> logger, IServiceProvider serviceProvider, IProcessingStorage processingStorage)
     {
         _kafkaSetting = option.Value;
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _processingStorage = processingStorage;
         _consumerConfig = new ConsumerConfig
         {
             BootstrapServers = _kafkaSetting.BootstrapServers,
@@ -63,10 +64,9 @@ public class KafkaProcessor : IKafkaProcessor
             _logger.LogInformation("Ready");
 
             while (true)
-            {
-                Program.isReceivingData = true;
+            {               
 
-                var response = consumer.Consume(Program.CancellationToken.Token);
+                var response = consumer.Consume();
                 try
                 {
                     if (response.Message is not null)
@@ -88,8 +88,8 @@ public class KafkaProcessor : IKafkaProcessor
                                 Raw = response.Message.Value,
                                 SerialNo = serialNo
                             };
-                            Program.DatabaseDict[serialNo] = new Payload(serialNo, model);
-                            Program.NtsaDataToBeSend[serialNo] = sendPayload;
+                            _processingStorage.DatabaseDict[serialNo] = new Payload(serialNo, model);
+                            _processingStorage.NtsaDataToBeSend[serialNo] = sendPayload;
                             //string rawdata = sendPayload.ConvertToNtsaFormat();
                             //var payload = new NtsaPayload(
                             //    speedLimiter.DeviceId.ToString(),
@@ -120,7 +120,7 @@ public class KafkaProcessor : IKafkaProcessor
                 {
                     _logger.LogError("{data}", response.Message.Value);
                 }
-                Program.isReceivingData = false;
+               
             }
         }
         catch (Exception ex)

@@ -19,7 +19,7 @@ public static class Helper
     public static byte[] HexStringToByteArray(this string hexinput)
     {
         if (hexinput == string.Empty)
-            return (byte[])null;
+            return Array.Empty<byte>();
         if (hexinput.Length % 2 == 1)
             hexinput = "0" + hexinput;
         int length = hexinput.Length / 2;
@@ -30,43 +30,43 @@ public static class Helper
     }
     public static string ConvertToNtsaFormat(this BCEMessage message)
     {
-        string ns = "N";
-        string ew = "E";
+        char ns = 'N';
+        char ew = 'E';
         int gpsStatus = Convert.ToInt16(!message.Valid);
         var dateTime = message.Event.TimeStamp.ConvertToDateTime().AddHours(3);
         if (message.Payload.Longitude < 0)
         {
-            ew = "W";
+            ew = 'W';
         }
         if (message.Payload.Latitude < 0)
         {
-            ns = "S";
+            ns = 'S';
         }
         //2023-05-11,11:14:50,000016100005024,0101011,KDG 832Y,0,00000.000,0,0,34.8881,,0.60288,,0,0,0
         string strData = $"{dateTime:yyyy-MM-dd},{dateTime:HH:mm:ss},{message.Event.UniqueId},{message.Event.UniqueId},{message.Event.UniqueId},{message.Payload.SpeedGps},{message.Payload.OdometerGps},{gpsStatus},{message.Payload.SatellitesFix},{message.Payload.Longitude},{ns},{message.Payload.Latitude},{ew},0,0,{Convert.ToInt16(!message.Payload.Input5State)}#";
         return strData;
     }
-    public static string ConvertToNtsaFormat(this SpeedLimiter message)
+    public static string ConvertToNtsaFormat(this SpeedLimiter message, int timeZone)
     {
-        string ns = "N";
-        string ew = "E";
+        char ns = 'N';
+        char ew = 'E';
         int gpsStatus = 0;
-        var dateTime = message.GpsDateTime;
+        var dateTime = message.GpsDateTime.AddHours(timeZone);
         if (message.Longitude < 0)
         {
-            ew = "W";
+            ew = 'W';
         }
         if (message.Latitude < 0)
         {
-            ns = "S";
+            ns = 'S';
         }
         //2023-05-11,11:14:50,000016100005024,0101011,KDG 832Y,0,00000.000,0,0,34.8881,,0.60288,,0,0,0
         string strData = $"{dateTime:yyyy-MM-dd},{dateTime:HH:mm:ss},{message.DeviceId},{message.DeviceId},{message.DeviceId},{message.Speed},{message.Odometer},{gpsStatus},{message.Satellites},{message.Longitude},{ns},{message.Latitude},{ew},{Convert.ToInt16(!message.PowerSignal)},0,{Convert.ToInt16(!message.IgnitionStatus)}#";
         return strData;
     }
 
-    public static string ConvertToNtsaFormat(this NtsaForwardData<SpeedLimiter> data)
-    => data.Data.ConvertToNtsaFormat();
+    public static string ConvertToNtsaFormat(this NtsaForwardData<SpeedLimiter> data, int timeZone)
+    => data.Data.ConvertToNtsaFormat(timeZone);
 
     public static DateTime ConvertToDateTime(this int timestamp)
     {

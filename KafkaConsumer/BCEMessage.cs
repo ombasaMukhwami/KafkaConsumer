@@ -64,7 +64,7 @@ public class Event
 {
     public long DeviceId { get; set; }
     public int TimeStamp { get; set; }
-    public string RecordGuid { get; set; }
+    public string RecordGuid { get; set; } = Guid.NewGuid().ToString();
     public string UniqueId { get; set; }
     public DateTime GpsDateTime { get { return TimeStamp.ConvertToDateTime().AddHours(3); } }
 }

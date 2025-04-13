@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
 namespace KafkaConsumer.Broker;
-public class MessageBrokerModelPooledObjectPolicy : IPooledObjectPolicy<IModel>
+public class MessageBrokerModelPooledObjectPolicy : IPooledObjectPolicy<IChannel>
 {
     private readonly MessageQueue _options;
     private readonly IConnection _connection;
@@ -25,15 +25,15 @@ public class MessageBrokerModelPooledObjectPolicy : IPooledObjectPolicy<IModel>
             VirtualHost = _options.VHost,
         };
 
-        return factory.CreateConnection();
+        return factory.CreateConnectionAsync().Result;
     }
 
-    public IModel Create()
+    public IChannel Create()
     {
-        return _connection.CreateModel();
+        return _connection.CreateChannelAsync().Result;
     }
 
-    public bool Return(IModel obj)
+    public bool Return(IChannel obj)
     {
         if (obj.IsOpen)
         {

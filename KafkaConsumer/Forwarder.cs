@@ -8,16 +8,18 @@ namespace KafkaConsumer;
 public class Forwarder : IForwarder
 {
     private readonly ILogger<Forwarder> _logger;
+    private readonly IProcessingStorage _processingStorage;
     private readonly Ntsa _ntsaValues;
-    private const string SERIAL_NUMBER = "0123456789F";
-    public Forwarder(IOptions<Ntsa> options, ILogger<Forwarder> logger)
+    private const string _serialNumber = "0123456789F";
+    public Forwarder(IOptions<Ntsa> options, ILogger<Forwarder> logger, IProcessingStorage processingStorage)
     {
         _ntsaValues = options.Value;
         _logger = logger;
+        _processingStorage = processingStorage;
     }
-    public async Task<bool> SendToNtsaJT808TCPAsync(string rawdata, string imei)
+    public async Task<bool> SendToNtsaJT808TCPAsync(string rawData, string imei)
     {
-        var dataArray = rawdata.HexStringToByteArray();
+        var dataArray = rawData.HexStringToByteArray();
         return await SendToNtsaJT808TCPAsync(dataArray, imei);
     }
     public Task<bool> SendToNtsaJT808TCPAsync(byte[] byteArray, string imei)
@@ -27,7 +29,7 @@ public class Forwarder : IForwarder
 
             Socket? sender = null;
             var clientSocket = new SocketVm();
-            if (!Program.LiveDevices.TryGetValue(imei, out clientSocket))
+            if (!_processingStorage.LiveDevices.TryGetValue(imei, out clientSocket))
             {
                 sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 try
@@ -110,7 +112,7 @@ public class Forwarder : IForwarder
                 if (isSend)
                 {
                     _logger.LogInformation("[{LocalEndPoint}]:id: {imei} {data}", sender?.LocalEndPoint?.ToString().Split(':')[1], imei.PadLeft(10, ' '), BitConverter.ToString(byteArray).SanitiseString());
-                    Program.LiveDevices[imei] = new SocketVm { LastSent = DateTimeOffset.UtcNow, Unit = imei, Sender = clientSocket?.Sender };
+                    _processingStorage.LiveDevices[imei] = new SocketVm { LastSent = DateTimeOffset.UtcNow, Unit = imei, Sender = clientSocket?.Sender };
                 }
                 if (_ntsaValues.ReceiveAck && isSend)
                 {
@@ -141,10 +143,10 @@ public class Forwarder : IForwarder
     {
         return Task.Run(() =>
         {
-            var liveDeviceSendingData = _ntsaValues.UseSingleChannel ? SERIAL_NUMBER : data.Imei;
+            var liveDeviceSendingData = _ntsaValues.UseSingleChannel ? _serialNumber : data.Imei;
             Socket? sender = null;
             var clientSocket = new SocketVm();
-            if (!Program.LiveDevices.TryGetValue(liveDeviceSendingData, out clientSocket))
+            if (!_processingStorage.LiveDevices.TryGetValue(liveDeviceSendingData, out clientSocket))
             {
                 sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 try
@@ -208,7 +210,7 @@ public class Forwarder : IForwarder
                 if (clientSocket?.Sender is null || !clientSocket.Sender.Connected)
                 {
                     Close(clientSocket ?? new());
-                    Program.LiveDevices.TryRemove(liveDeviceSendingData, out var _);
+                    _processingStorage.LiveDevices.TryRemove(liveDeviceSendingData, out var _);
                     sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     sender.Connect(IPAddress.Parse(_ntsaValues.NtsaHost), _ntsaValues.NtsaPort);
                     _logger.LogWarning($"[NEW -> {sender?.LocalEndPoint?.ToString().Split(':')[1]}]");
@@ -259,16 +261,16 @@ public class Forwarder : IForwarder
                     try
                     {
                         if (clientSocket.Sender.Connected)
-                            Program.LiveDevices[liveDeviceSendingData] = new SocketVm { LastSent = DateTimeOffset.UtcNow, Unit = liveDeviceSendingData, Sender = clientSocket?.Sender, LocalEndPoint = sender.LocalEndPoint?.ToString() };
+                            _processingStorage.LiveDevices[liveDeviceSendingData] = new SocketVm { LastSent = DateTimeOffset.UtcNow, Unit = liveDeviceSendingData, Sender = clientSocket?.Sender, LocalEndPoint = sender.LocalEndPoint?.ToString() };
                         else
                         {
-                            Program.LiveDevices.TryRemove(liveDeviceSendingData, out var _);
+                            _processingStorage.LiveDevices.TryRemove(liveDeviceSendingData, out var _);
                             Close(clientSocket);
                         }
                     }
                     catch (Exception)
                     {
-                        Program.LiveDevices.TryRemove(liveDeviceSendingData, out var _);
+                        _processingStorage.LiveDevices.TryRemove(liveDeviceSendingData, out var _);
                     }
                 }
                 if (_ntsaValues.ReceiveAck && isSend)

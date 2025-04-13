@@ -58,4 +58,6 @@ public class MessageQueue : IMessageQueue
 public class OtherSetting
 {
     public bool SaveToDb { get; set; }
+    public int TimeZone { get; set; } = -3;
+    public int Messages { get; set; } = 1;
 }

@@ -1,45 +1,50 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Serilog;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace KafkaConsumer.Broker;
 
 public class MessageBrokerManager : IMessageBrokerManager
 {
-    private readonly DefaultObjectPool<IModel> _objectPool;
+    private readonly DefaultObjectPool<IChannel> _objectPool;
     private readonly ILogger<MessageBrokerManager> _logger;
     private readonly QueueSetting _setting;
     private readonly TrackerQueueSetting _trackerQueueSetting;
     private readonly OtherSetting _otherSetting;
+    private readonly IProcessingStorage _processingStorage;
 
-    public MessageBrokerManager(IPooledObjectPolicy<IModel> objectPolicy,
+    public MessageBrokerManager(IPooledObjectPolicy<IChannel> objectPolicy, IProcessingStorage processingStorage,
         ILogger<MessageBrokerManager> logger,
         IOptions<QueueSetting> options,
         IOptions<TrackerQueueSetting> trackerOptions,
         IOptions<OtherSetting> otherSettingOption)
     {
-        _objectPool = new DefaultObjectPool<IModel>(objectPolicy, 3);
+        _processingStorage = processingStorage;
+        _objectPool = new DefaultObjectPool<IChannel>(objectPolicy, 6);
         _logger = logger;
         _setting = options.Value;
         _trackerQueueSetting = trackerOptions.Value;
         _otherSetting = otherSettingOption.Value;
     }
-    public void CreateChannels()
+    public async Task CreateChannels()
     {
         try
         {
-            var listOfQueues = new IQueueSetting[] { _setting, _trackerQueueSetting };
+            var listOfQueues = new IQueueSetting[] { _setting, _trackerQueueSetting, _processingStorage.NtsaRawMessage };
             var channel = _objectPool.Get();
             foreach (var queue in listOfQueues)
             {
-
-                channel.ExchangeDeclare(queue.ExchangeName, queue.TypeName, queue.ExchangeDurable);
-                channel.QueueDeclare(queue.QueueName, durable: queue.QueueDurable, exclusive: queue.Exclusive, autoDelete: queue.AutoDelete, arguments: null);
+              await  channel.ExchangeDeclareAsync(queue.ExchangeName, queue.TypeName, queue.ExchangeDurable);
+              await  channel.QueueDeclareAsync(queue.QueueName, durable: queue.QueueDurable, exclusive: queue.Exclusive, autoDelete: queue.AutoDelete, arguments: null);
+              await  channel.QueueBindAsync(queue.QueueName, queue.ExchangeName, queue.RoutingKey);
             }
 
             _objectPool.Return(channel);
@@ -47,24 +52,31 @@ public class MessageBrokerManager : IMessageBrokerManager
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Failed", ex);
+            _logger.LogCritical("Failed with {Error}", ex);
             Environment.Exit(-1);
         }
     }
 
     public Task<bool> Publish<T>(T message) where T : class
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             if (!_otherSetting.SaveToDb)
                 return true;
+            return await Publish(message, _setting);
+        });
+    }
+    public Task<bool> Publish<T>(T message, IQueueSetting setting) where T : class
+    {
+        return Task.Run(async () =>
+        {
             bool published = false;
             var channel = _objectPool.Get();
             var msg = JsonConvert.SerializeObject(message, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
             try
             {
                 var sendBytes = Encoding.UTF8.GetBytes(msg);
-                channel.BasicPublish(_setting.ExchangeName, _setting.RoutingKey, null, sendBytes);
+              await  channel.BasicPublishAsync(setting.ExchangeName, setting.RoutingKey, sendBytes);
                 published = true;
             }
             catch (Exception ex)
@@ -78,24 +90,27 @@ public class MessageBrokerManager : IMessageBrokerManager
             return published;
         });
     }
-    public void Subscribe()
+    public async Task Subscribe()
     {
         var channel = _objectPool.Get();
-        var consumer = new EventingBasicConsumer(channel);
-        channel.BasicQos(0, 1, false);
-        channel.BasicConsume(_trackerQueueSetting.QueueName, true, consumer);
-        consumer.Received += (sender, deliveryArgs) =>
-        {
+        var consumer = new AsyncEventingBasicConsumer(channel);
+       await channel.BasicQosAsync(0, 1, false);
+       await channel.BasicConsumeAsync(_trackerQueueSetting.QueueName, true, consumer);
+        consumer.ReceivedAsync += (sender, deliveryArgs) =>
+        {            
             string data = Encoding.UTF8.GetString(deliveryArgs.Body.ToArray());
             try
             {
                 var lstToSaveToDb = JsonConvert.DeserializeObject<QueuePayload<PositionData>[]>(data, Program.JsonSerializationSettingImport);
-                if (lstToSaveToDb is null) return;
+                if (lstToSaveToDb is null)
+                {
+                    return Task.CompletedTask;
+                }
 
                 foreach (var item in lstToSaveToDb)
-                {                   
+                {
                     var model = item.ToBCEMessage();
-                    var speedLimiter = model.ConvertToSpeedLimiter();                    
+                    var speedLimiter = model.ConvertToSpeedLimiter();
 
                     var sendPayload = new NtsaForwardData<SpeedLimiter>
                     {
@@ -104,14 +119,17 @@ public class MessageBrokerManager : IMessageBrokerManager
                         SerialNo = item.SerialNo
                     };
 
-                    Program.DatabaseDict[item.SerialNo] = new Payload(item.SerialNo, model);
-                    Program.NtsaDataToBeSend[item.SerialNo] = sendPayload;
+                    _processingStorage.DatabaseDict[item.SerialNo] = new Payload(item.SerialNo, model);
+                    _processingStorage.NtsaDataToBeSend[item.SerialNo] = sendPayload;
                 }
             }
             catch (Exception error)
             {
                 _logger.LogCritical("Error {error} for {data}", error, data);
             }
+            return Task.CompletedTask;
         };
-    }
+        
+    }    
+
 }

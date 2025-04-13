@@ -34,7 +34,7 @@ public class MessageBrokerManager : IMessageBrokerManager
         _trackerQueueSetting = trackerOptions.Value;
         _otherSetting = otherSettingOption.Value;
     }
-    public async Task CreateChannels()
+    public async ValueTask CreateChannels()
     {
         try
         {
@@ -42,9 +42,9 @@ public class MessageBrokerManager : IMessageBrokerManager
             var channel = _objectPool.Get();
             foreach (var queue in listOfQueues)
             {
-              await  channel.ExchangeDeclareAsync(queue.ExchangeName, queue.TypeName, queue.ExchangeDurable);
-              await  channel.QueueDeclareAsync(queue.QueueName, durable: queue.QueueDurable, exclusive: queue.Exclusive, autoDelete: queue.AutoDelete, arguments: null);
-              await  channel.QueueBindAsync(queue.QueueName, queue.ExchangeName, queue.RoutingKey);
+                await channel.ExchangeDeclareAsync(queue.ExchangeName, queue.TypeName, queue.ExchangeDurable);
+                await channel.QueueDeclareAsync(queue.QueueName, durable: queue.QueueDurable, exclusive: queue.Exclusive, autoDelete: queue.AutoDelete, arguments: null);
+                await channel.QueueBindAsync(queue.QueueName, queue.ExchangeName, queue.RoutingKey);
             }
 
             _objectPool.Return(channel);
@@ -57,47 +57,41 @@ public class MessageBrokerManager : IMessageBrokerManager
         }
     }
 
-    public Task<bool> Publish<T>(T message) where T : class
+    public async ValueTask<bool> Publish<T>(T message) where T : class
     {
-        return Task.Run(async () =>
-        {
-            if (!_otherSetting.SaveToDb)
-                return true;
-            return await Publish(message, _setting);
-        });
+        if (!_otherSetting.SaveToDb)
+            return true;
+        return await Publish(message, _setting);
     }
-    public Task<bool> Publish<T>(T message, IQueueSetting setting) where T : class
+    public async ValueTask<bool> Publish<T>(T message, IQueueSetting setting) where T : class
     {
-        return Task.Run(async () =>
+        bool published = false;
+        var channel = _objectPool.Get();
+        var msg = JsonConvert.SerializeObject(message, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+        try
         {
-            bool published = false;
-            var channel = _objectPool.Get();
-            var msg = JsonConvert.SerializeObject(message, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-            try
-            {
-                var sendBytes = Encoding.UTF8.GetBytes(msg);
-              await  channel.BasicPublishAsync(setting.ExchangeName, setting.RoutingKey, sendBytes);
-                published = true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(msg, ex);
-            }
-            finally
-            {
-                _objectPool.Return(channel);
-            }
-            return published;
-        });
+            var sendBytes = Encoding.UTF8.GetBytes(msg);
+            await channel.BasicPublishAsync(setting.ExchangeName, setting.RoutingKey, sendBytes);
+            published = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(msg, ex);
+        }
+        finally
+        {
+            _objectPool.Return(channel);
+        }
+        return published;
     }
-    public async Task Subscribe()
+    public async ValueTask Subscribe()
     {
         var channel = _objectPool.Get();
         var consumer = new AsyncEventingBasicConsumer(channel);
-       await channel.BasicQosAsync(0, 1, false);
-       await channel.BasicConsumeAsync(_trackerQueueSetting.QueueName, true, consumer);
+        await channel.BasicQosAsync(0, 1, false);
+        await channel.BasicConsumeAsync(_trackerQueueSetting.QueueName, true, consumer);
         consumer.ReceivedAsync += (sender, deliveryArgs) =>
-        {            
+        {
             string data = Encoding.UTF8.GetString(deliveryArgs.Body.ToArray());
             try
             {
@@ -129,7 +123,7 @@ public class MessageBrokerManager : IMessageBrokerManager
             }
             return Task.CompletedTask;
         };
-        
-    }    
+
+    }
 
 }

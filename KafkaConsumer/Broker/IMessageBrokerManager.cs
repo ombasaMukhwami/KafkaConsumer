@@ -5,8 +5,8 @@ namespace KafkaConsumer.Broker;
 
 public interface IMessageBrokerManager
 {
-    Task<bool> Publish<T>(T message) where T : class;
-    Task<bool> Publish<T>(T message, IQueueSetting setting) where T : class;
-    Task Subscribe();
-    Task CreateChannels();
+    ValueTask<bool> Publish<T>(T message) where T : class;
+    ValueTask<bool> Publish<T>(T message, IQueueSetting setting) where T : class;
+    ValueTask Subscribe();
+    ValueTask CreateChannels();
 }

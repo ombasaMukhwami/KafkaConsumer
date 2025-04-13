@@ -69,7 +69,7 @@ public class WorkerBackgroundService : BackgroundService
                                                          .ToDictionary(x => x.Key, x => x.AsEnumerable());
         foreach (var item in lstToSaveToDb)
         {
-            var result = await httpSender!.Publish(item.Value, _queueSettings);
+            var result = await httpSender!.PublishAync(item.Value, _queueSettings);
             if (result)
             {
                 foreach (var k in item.Value)
@@ -141,7 +141,7 @@ public class WorkerBackgroundService : BackgroundService
                             _ntsaSender.UseSingleChannel
                         );
 
-                        var result = await publisher!.Publish(payload, _processingStorage.NtsaRawMessage);
+                        var result = await publisher!.PublishAync(payload, _processingStorage.NtsaRawMessage);
                         if (result)
                         {
                             foreach (var k in sendDt)

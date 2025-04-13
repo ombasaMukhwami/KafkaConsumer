@@ -41,8 +41,8 @@ public class Program
        
 
         var transporter = serviceProvider.GetService<IMessageBrokerManager>()!;
-        await transporter.CreateChannels();
-        await transporter.Subscribe();
+        await transporter.CreateChannelAsync();
+        await transporter.SubscribeAsync();
         
 
         //var config = new ProducerConfig { BootstrapServers = "127.0.0.1:9092" };

@@ -34,7 +34,7 @@ public class MessageBrokerManager : IMessageBrokerManager
         _trackerQueueSetting = trackerOptions.Value;
         _otherSetting = otherSettingOption.Value;
     }
-    public async ValueTask CreateChannels()
+    public async ValueTask CreateChannelAsync()
     {
         try
         {
@@ -57,13 +57,13 @@ public class MessageBrokerManager : IMessageBrokerManager
         }
     }
 
-    public async ValueTask<bool> Publish<T>(T message) where T : class
+    public async ValueTask<bool> PublishAsync<T>(T message) where T : class
     {
         if (!_otherSetting.SaveToDb)
             return true;
-        return await Publish(message, _setting);
+        return await PublishAync(message, _setting);
     }
-    public async ValueTask<bool> Publish<T>(T message, IQueueSetting setting) where T : class
+    public async ValueTask<bool> PublishAync<T>(T message, IQueueSetting setting) where T : class
     {
         bool published = false;
         var channel = _objectPool.Get();
@@ -84,7 +84,7 @@ public class MessageBrokerManager : IMessageBrokerManager
         }
         return published;
     }
-    public async ValueTask Subscribe()
+    public async ValueTask SubscribeAsync()
     {
         var channel = _objectPool.Get();
         var consumer = new AsyncEventingBasicConsumer(channel);

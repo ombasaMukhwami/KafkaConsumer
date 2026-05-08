@@ -1,7 +1,4 @@
 ﻿using Confluent.Kafka;
-using KafkaConsumer.Broker;
-using KafkaConsumer.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -17,15 +14,13 @@ public class KafkaProcessor : IKafkaProcessor
 {
     private readonly KafkaSetting _kafkaSetting;
     private readonly ILogger<KafkaProcessor> _logger;
-    private readonly IServiceProvider _serviceProvider;
     private readonly IProcessingStorage _processingStorage;
     private readonly ConsumerConfig _consumerConfig;
 
-    public KafkaProcessor(IOptions<KafkaSetting> option, ILogger<KafkaProcessor> logger, IServiceProvider serviceProvider, IProcessingStorage processingStorage)
+    public KafkaProcessor(IOptions<KafkaSetting> option, ILogger<KafkaProcessor> logger, IProcessingStorage processingStorage)
     {
         _kafkaSetting = option.Value;
         _logger = logger;
-        _serviceProvider = serviceProvider;
         _processingStorage = processingStorage;
         _consumerConfig = new ConsumerConfig
         {
@@ -42,27 +37,12 @@ public class KafkaProcessor : IKafkaProcessor
     public async void Consume()
     {
 
-        //Confluent.io
-        //var config = new ConsumerConfig
-        //{
-        //    BootstrapServers = "pkc-6ojv2.us-west4.gcp.confluent.cloud:9092",
-        //    SecurityProtocol = SecurityProtocol.SaslSsl,
-        //    SaslMechanism = SaslMechanism.Plain,
-        //    SaslUsername = "MZN35RADYYN3W4I5",
-        //    SaslPassword = "+wHPjcFPa07awireX4CdL9Df1SDqaG1c1rdifpiPHVzQDG5JMD14XhqTKN+kaFqa",
-        //    AutoOffsetReset = AutoOffsetReset.Earliest,
-        //	GroupId="ntsa-data-group"
-        //};
-
         using var consumer = new ConsumerBuilder<Ignore, string>(_consumerConfig).Build();
         consumer.Subscribe(_kafkaSetting.Topic);
 
         try
         {
-            //var httpSender = ActivatorUtilities.GetServiceOrCreateInstance<MessageBrokerManager>(Program.ServiceProvider);
-            //var ntsaSender = ActivatorUtilities.GetServiceOrCreateInstance<Forwarder>(Program.ServiceProvider);
             _logger.LogInformation("Ready");
-
             while (true)
             {               
 
@@ -72,13 +52,7 @@ public class KafkaProcessor : IKafkaProcessor
                     if (response.Message is not null)
                     {
                         var serialNo = Guid.NewGuid();
-                        var model = JsonConvert.DeserializeObject<BCEMessage>(response.Message.Value, Program.JsonSerializationSettingImport);
-                        //var lst = new List<Payload>
-                        //{
-                        //    new (serialNo, model)
-                        //};
-                        //_ = await httpSender.Publish(lst);
-
+                        var model = JsonConvert.DeserializeObject<BCEMessage>(response.Message.Value);
                         if (model != null && model.Gps != null && model.Gps.Location != null)
                         {
                             var speedLimiter = model.ConvertToSpeedLimiter();
@@ -89,36 +63,13 @@ public class KafkaProcessor : IKafkaProcessor
                                 SerialNo = serialNo
                             };
                             _processingStorage.DatabaseDict[serialNo] = new Payload(serialNo, model);
-                            _processingStorage.NtsaDataToBeSend[serialNo] = sendPayload;
-                            //string rawdata = sendPayload.ConvertToNtsaFormat();
-                            //var payload = new NtsaPayload(
-                            //    speedLimiter.DeviceId.ToString(),
-                            //    speedLimiter.Heading,
-                            //    speedLimiter.Speed,
-                            //    speedLimiter.Latitude,
-                            //    speedLimiter.Longitude,
-                            //    speedLimiter.GpsDateTime,
-                            //    speedLimiter.DeviceId.ToString(),
-                            //    rawdata,
-                            //    Convert.ToInt16(speedLimiter.IgnitionStatus),
-                            //    sendPayload.SerialNo,
-                            //   Program.NtsaSender.NtsaHost,
-                            //    Program.NtsaSender.NtsaPort
-                            //);
-
-                            //var send = await ntsaSender.SendDataUsingSingleChannel(new(payload.Raw.ToHex().HexStringToByteArray(), payload.Unit));
-                            //if (!send)
-                            //    Program.NtsaDataToBeSend[serialNo] = sendPayload;
-                        }
-                        //else
-                        //{
-                        //    _logger.LogInformation("{offset} {response}", response.Offset.Value, response.Message.Value);
-                        //}
+                            _processingStorage.NtsaDataToBeSend[serialNo] = sendPayload;   
+                        }                       
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("{data}", response.Message.Value);
+                    _logger.LogError("{Data} {Error}", response.Message.Value, ex.Message);
                 }
                
             }

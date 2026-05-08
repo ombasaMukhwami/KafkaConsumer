@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace KafkaConsumer.Models;
+﻿namespace KafkaConsumer.Models;
 
 public partial class Device
 {

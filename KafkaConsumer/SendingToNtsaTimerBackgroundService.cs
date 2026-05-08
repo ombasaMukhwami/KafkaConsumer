@@ -1,90 +1,61 @@
-﻿using KafkaConsumer.Broker;
+using System.Collections.Concurrent;
+using System.Net.Sockets;
+using System.Text;
+using KafkaConsumer.Broker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Collections.Concurrent;
-using System.Net.Sockets;
-using System.Text;
-using System.Timers;
 
 namespace KafkaConsumer;
 
-public class WorkerBackgroundService : BackgroundService
+public class SendingToNtsaTimerBackgroundService : IHostedService, IDisposable
 {
+    private const int MAX_TIME = 15;
     private readonly IProcessingStorage _processingStorage;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<WorkerBackgroundService> _logger;
+    private readonly ILogger<SendingToNtsaTimerBackgroundService> _logger;
 
-    private readonly INtsa _ntsaSender;
-    private readonly IQueueSetting _queueSettings;
+    private readonly INtsa _remoteServerSettings;
     private readonly OtherSetting _otherSettings;
 
     private volatile bool _sendingToNtsaInProgress = false;
-    private volatile bool _savingToDatabaseInProgress = false;
 
-    private readonly System.Timers.Timer _ntsaSenderTimer;
-    private readonly System.Timers.Timer _databaseTimer;
 
-    public WorkerBackgroundService(ILogger<WorkerBackgroundService> logger, IServiceProvider serviceProvider, IProcessingStorage processingStorage, IOptions<Ntsa> ntsaOptions, IOptions<OtherSetting> otherSettingOption, IOptions<QueueSetting> queueSettingOption)
+    private Timer? _timer;
+    private bool _disposed;
+
+    public SendingToNtsaTimerBackgroundService(ILogger<SendingToNtsaTimerBackgroundService> logger, IServiceProvider serviceProvider, IProcessingStorage processingStorage, IOptions<Ntsa> ntsaOptions, IOptions<OtherSetting> otherSettingOption)
     {
         _logger = logger;
         _processingStorage = processingStorage;
         _serviceProvider = serviceProvider;
-        _ntsaSenderTimer = new System.Timers.Timer(15);
-        _databaseTimer = new System.Timers.Timer(TimeSpan.FromSeconds(15));
 
         _otherSettings = otherSettingOption.Value;
-        _ntsaSender = ntsaOptions.Value;
-        _queueSettings = queueSettingOption.Value;
+        _remoteServerSettings = ntsaOptions.Value;
 
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _ntsaSenderTimer.Elapsed += SendingToNtsaTimer_Elapsed!;
-        _ntsaSenderTimer.Enabled = true;
-
-        _databaseTimer.Elapsed += DatabaseTimer_Elapsed;
-        _databaseTimer.Enabled = true;
-
+        _logger.LogInformation("SendingToNtsaTimer Background Service is starting.");
+        _timer = new Timer(SendMessage, cancellationToken, TimeSpan.Zero, TimeSpan.FromSeconds(MAX_TIME));
         await Task.CompletedTask;
     }
 
-    private async void DatabaseTimer_Elapsed(object? sender, ElapsedEventArgs e)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_savingToDatabaseInProgress || _processingStorage.DatabaseDict.IsEmpty) return;
-        _savingToDatabaseInProgress = true;
-
-        var httpSender = _serviceProvider.GetService<IMessageBrokerManager>();
-
-        var lstToSaveToDb = _processingStorage.DatabaseDict.Values.Take(500_000)
-                                                         .GroupBy(d => d.Message.Event.DeviceId)
-                                                         .ToDictionary(x => x.Key, x => x.AsEnumerable())
-                                                         .Select(item => item.Value);
-        foreach (var item in lstToSaveToDb)
-        {
-            var result = await httpSender!.PublishAsync(item, _queueSettings);
-            if (result)
-            {
-                foreach (var k in item)
-                {
-                    _processingStorage.DatabaseDict.TryRemove(k.SerialNo, out _);
-                }
-            }
-        }
-
-
-        _savingToDatabaseInProgress = false;
+        _timer?.Change(Timeout.Infinite, 0);
+        await Task.CompletedTask;
     }
 
-    private async void SendingToNtsaTimer_Elapsed(object sender, ElapsedEventArgs e)
+    private async void SendMessage(object? state)
     {
         if (_sendingToNtsaInProgress || _processingStorage.NtsaDataToBeSend.IsEmpty)
             return;
         _sendingToNtsaInProgress = true;
 
-        var publisher = _serviceProvider.GetService<IMessageBrokerManager>();
+        var publisher = _serviceProvider.GetRequiredService<IMessageBrokerManager>();
         while (!_processingStorage.NtsaDataToBeSend.IsEmpty)
         {
 
@@ -117,7 +88,7 @@ public class WorkerBackgroundService : BackgroundService
                         StringBuilder multipleRecords = new();
                         var sendDt = lstTest.Values.Take(_otherSettings.Messages > 5 ? 5 : _otherSettings.Messages).ToList();
                         sendDt.ForEach(item => multipleRecords.Append(item.ConvertToNtsaFormat(_otherSettings.TimeZone)));
-                        string rawdata = multipleRecords.ToString();
+                        string rawData = multipleRecords.ToString();
                         var sendPayload = sendDt.FirstOrDefault()!;
                         var payload = new NtsaPayload(
                             sendPayload.Data.DeviceId.ToString(),
@@ -127,19 +98,19 @@ public class WorkerBackgroundService : BackgroundService
                             sendPayload.Data.Longitude,
                             sendPayload.Data.GpsDateTime,
                             sendPayload.Data.DeviceId.ToString(),
-                            rawdata,
+                            rawData,
                             Convert.ToInt16(sendPayload.Data.IgnitionStatus),
                             sendPayload.SerialNo,
-                            _ntsaSender.NtsaHost,
-                            _ntsaSender.NtsaPort,
-                            _ntsaSender.ReceiveAck,
-                            _ntsaSender.UseSingleChannel
+                            _remoteServerSettings.NtsaHost,
+                            _remoteServerSettings.NtsaPort,
+                            _remoteServerSettings.ReceiveAck,
+                            _remoteServerSettings.UseSingleChannel
                         );
 
                         var result = await publisher!.PublishAsync(payload, _processingStorage.NtsaRawMessage);
                         if (result)
                         {
-                            foreach (var serialNo in sendDt.Select(d => d.SerialNo))
+                            foreach (var serialNo in sendDt.Select(x => x.SerialNo))
                             {
                                 _processingStorage.NtsaDataToBeSend.TryRemove(serialNo, out _);
                                 lstTest.TryRemove(serialNo, out _);
@@ -166,9 +137,9 @@ public class WorkerBackgroundService : BackgroundService
             try
             {
                 _processingStorage.LiveDevices.TryRemove(item.Unit, out var sock);
-                sock.Sender?.Shutdown(SocketShutdown.Both);
-                sock.Sender?.Close();
-                sock.Sender?.Dispose();
+                sock?.Sender?.Shutdown(SocketShutdown.Both);
+                sock?.Sender?.Close();
+                sock?.Sender?.Dispose();
             }
             catch (Exception e)
             {
@@ -176,4 +147,22 @@ public class WorkerBackgroundService : BackgroundService
             }
         }
     }
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+
+        if (disposing)
+        {
+            _timer?.Dispose();
+        }
+
+        _disposed = true;
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 }
+

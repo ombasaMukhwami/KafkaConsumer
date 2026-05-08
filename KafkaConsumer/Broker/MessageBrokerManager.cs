@@ -1,14 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Serilog;
-using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace KafkaConsumer.Broker;
 
@@ -61,9 +57,9 @@ public class MessageBrokerManager : IMessageBrokerManager
     {
         if (!_otherSetting.SaveToDb)
             return true;
-        return await PublishAync(message, _setting);
+        return await PublishAsync(message, _setting);
     }
-    public async ValueTask<bool> PublishAync<T>(T message, IQueueSetting setting) where T : class
+    public async ValueTask<bool> PublishAsync<T>(T message, IQueueSetting setting) where T : class
     {
         bool published = false;
         var channel = _objectPool.Get();

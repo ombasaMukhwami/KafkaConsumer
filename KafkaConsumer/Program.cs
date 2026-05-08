@@ -79,32 +79,8 @@ public class Program
             .WriteTo.Console(Serilog.Events.LogEventLevel.Information)
             .WriteTo.File($"logs/kafka-consumer-.log", Serilog.Events.LogEventLevel.Warning, rollingInterval: RollingInterval.Day);
         }).ConfigureServices((context, services) =>
-        {
-            services.AddOptions();
-            services.AddSingleton<IMessageBrokerManager,MessageBrokerManager>();
-            services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
-            services.AddSingleton<IPooledObjectPolicy<IChannel>, MessageBrokerModelPooledObjectPolicy>();
-
-            services.AddSingleton(ctx => ctx.GetService<IOptions<QueueSetting>>()!.Value);
-            services.AddSingleton(ctx => ctx.GetService<IOptions<KafkaSetting>>()!.Value);
-            services.AddScoped<IKafkaSetting, KafkaSetting>();
-            services.AddSingleton<IKafkaProcessor, KafkaProcessor>();
-            services.Configure<KafkaSetting>(kafkaConfig => Configuration.GetSection(nameof(KafkaSetting)).Bind(kafkaConfig));
-
-            services.AddSingleton(ctx => ctx.GetService<IOptions<Ntsa>>()!.Value);
-            services.AddScoped<IForwarder, Forwarder>();
-            services.Configure<Ntsa>(ntsaConfig => Configuration.GetSection(nameof(Ntsa)).Bind(ntsaConfig));
-           
-
-            services.AddSingleton(ctx => ctx.GetService<IOptions<OtherSetting>>()!.Value);
-            services.Configure<OtherSetting>(config => Configuration.GetSection(nameof(OtherSetting)).Bind(config));
-            services.Configure<TrackerQueueSetting>(config => Configuration.GetSection(nameof(TrackerQueueSetting)).Bind(config));
-            services.Configure<QueueSetting>(config => Configuration.GetSection(nameof(QueueSetting)).Bind(config));
-            services.Configure<MessageQueue>(msgQueue => Configuration.GetSection(nameof(MessageQueue)).Bind(msgQueue));
-
-            services.AddHostedService<WorkerBackgroundService>();
-            services.AddSingleton<IProcessingStorage, ProcessingStorage>();
-
+        {            
+            services.AddMyServices(context.Configuration);
         });
     }
     public static void HandleDescerializationError(object sender, Newtonsoft.Json.Serialization.ErrorEventArgs e)
